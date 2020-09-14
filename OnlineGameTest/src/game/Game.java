@@ -17,6 +17,9 @@ public class Game {
 
         this.nPlayers = nPlayers;
         obstacles = new ArrayList<>();
+        players = new ArrayList<>();
+        projectiles = new ArrayList<>();
+        generateMap();
 
     }
 
@@ -29,24 +32,14 @@ public class Game {
         players.add(new Player(10, 10));
     }
 
-    public int getWidth() {
-        return WIDTH;
-    }
+    public ArrayList<Obstacle> getObstacles() { return obstacles; }
 
-    public int getHeight() {
-        return HEIGHT;
-    }
+    public ArrayList<Player> getPlayers() { return players; }
 
-    public ArrayList<Obstacle> getObstacles() {
-        return obstacles;
-    }
+    public ArrayList<Projectile> getProjectiles() { return projectiles; }
 
-    public ArrayList<Player> getPlayers() {
-        return players;
-    }
+    public int getWidth() { return WIDTH; }
 
-    public ArrayList<Projectile> getProjectiles() {
-        return projectiles;
-    }
+    public int getHeight() { return HEIGHT; }
 
 }

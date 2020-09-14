@@ -9,10 +9,16 @@ public class ClientContainer extends Container {
     private Game game;
     private GamePanel gamePanel;
 
-    public ClientContainer(int nPlayers) {
+    private int frameWidth;
+    private int frameHeight;
+
+    public ClientContainer(int nPlayers, int frameWidth, int frameHeight) {
+
+        this.frameWidth = frameWidth;
+        this.frameHeight = frameHeight;
 
         game = new Game(nPlayers);
-        gamePanel = new GamePanel(game);
+        gamePanel = new GamePanel(game, frameWidth, frameHeight);
 
         setLayout(new GridBagLayout());
         GridBagConstraints gc = new GridBagConstraints();
@@ -20,9 +26,17 @@ public class ClientContainer extends Container {
         gc.fill = GridBagConstraints.BOTH;
         gc.gridx = 0;
         gc.gridy = 0;
+        gc.anchor = GridBagConstraints.CENTER;
         add(gamePanel, gc);
+
+        setVisible(true);
 
     }
 
+    public void setSize(int frameWidth, int frameHeight) {
+        this.frameWidth = frameWidth;
+        this.frameHeight = frameHeight;
+        gamePanel.setSize(this.frameWidth, this.frameHeight);
+    }
 
 }

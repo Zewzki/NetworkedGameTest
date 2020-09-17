@@ -8,6 +8,7 @@ public class Game {
     private static final int HEIGHT = 800;
 
     private int nPlayers;
+    private boolean gameIsOver;
 
     private ArrayList<Obstacle> obstacles;
     private ArrayList<Player> players;
@@ -16,6 +17,7 @@ public class Game {
     public Game(int nPlayers) {
 
         this.nPlayers = nPlayers;
+        gameIsOver = false;
         obstacles = new ArrayList<>();
         players = new ArrayList<>();
         projectiles = new ArrayList<>();
@@ -41,5 +43,7 @@ public class Game {
     public int getWidth() { return WIDTH; }
 
     public int getHeight() { return HEIGHT; }
+
+    public boolean isOver() { return gameIsOver; }
 
 }

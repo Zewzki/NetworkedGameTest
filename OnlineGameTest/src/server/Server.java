@@ -1,5 +1,7 @@
 package server;
 
+import game.Game;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -7,6 +9,7 @@ import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -26,8 +29,6 @@ public class Server {
     public Server() {
 
         logger = new ServerLogger();
-        logger.log("helo");
-        logger.log("sex with dudes");
 
         sockServer = new SockServer[N_CONCURRENT_CLIENTS];
         executor = Executors.newFixedThreadPool(N_CONCURRENT_CLIENTS);
@@ -65,11 +66,10 @@ public class Server {
 
     private class SockServer implements Runnable {
 
-        private ObjectOutputStream output;
-        private ObjectInputStream input;
-        private Socket connection;
+        private ArrayList<ClientConnection> connections;
         private int myConID;
         private boolean alive = false;
+        private boolean waitForConnections = true;
 
         public SockServer(int conID) {
             myConID = conID;
@@ -78,93 +78,72 @@ public class Server {
         @Override
         public void run() {
 
-            alive = true;
+            waitForConnections = true;
 
-            while(alive) {
+            while(waitForConnections) {
 
                 try {
-
-                    getStreams();
-
-                    while(alive) {
-
-                        try {
-                            processConnection();
-                        } catch (EOFException e) {
-                            logger.log("Server " + myConID + " terminated connection");
-                            alive = false;
-                        }
-
-                    }
-
-                    nClientsActive--;
-
+                    waitForConnection();
                 } catch (IOException e) {
-                    logger.log(e.toString());
+                    System.err.println("Error receiving new connection");
+                }
+
+                String[] connectionData = getConnectionData();
+
+                for(String s : connectionData) {
+                    if(s.contains("START")) waitForConnections = false;
                 }
 
             }
+
+            Game game = new Game(getNumActiveConnections());
+
+            alive = true;
+
+            while(alive && !game.isOver()) {
+
+                String[] connectionData = getConnectionData();
+
+
+
+                int activeConnections = getNumActiveConnections();
+                if(activeConnections <= 0) alive = false;
+
+            }
+
+            nClientsActive--;
 
         }
 
         private void waitForConnection() throws IOException {
 
             logger.log("Waiting for connection " + myConID);
-            connection = server.accept();
+            Socket connection = server.accept();
+            connections.add(new ClientConnection(connection, logger, myConID));
             logger.log("Connection " + myConID + " received from: " + connection.getInetAddress().getHostAddress());
 
         }
 
-        private void getStreams() throws IOException {
+        private String[] getConnectionData() {
 
-            output = new ObjectOutputStream(connection.getOutputStream());
-            output.flush();
-            input = new ObjectInputStream(connection.getInputStream());
+            String[] connectionData = new String[connections.size()];
 
-        }
+            for(int i = 0; i < connections.size(); i++) connectionData[i] = connections.get(i).getConnectionData();
 
-        private void processConnection() throws IOException {
-
-            try {
-
-                String command = (String) input.readObject();
-
-                if(command.equals("TERMINATE")) {
-                    closeConnection();
-                    return;
-                }
-
-            } catch (ClassNotFoundException e) {
-                logger.log("Server " + myConID + " received unknown object type");
-            }
+            return connectionData;
 
         }
 
-        private void closeConnection() {
-
-            alive = false;
-            sendData("TERMINATE");
-            logger.log("Terminating connection " + myConID);
-
-            try {
-                output.close();
-                input.close();
-                connection.close();
-            } catch (IOException e) {
-                logger.log(e.toString());
-            }
+        private void processConnectionData() {
 
         }
 
-        private void sendData(Object data) {
+        private int getNumActiveConnections() {
 
-            try {
-                output.writeObject(data);
-                output.flush();
-                logger.log("Server " + myConID + " sent " + data.toString());
-            } catch (IOException e) {
-                logger.log("Server " + myConID + " failed to write data " + data.toString());
-            }
+            int activeConnections = 0;
+            for(ClientConnection cc : connections) if(cc.isAlive()) activeConnections++;
+
+            return activeConnections;
 
         }
 
